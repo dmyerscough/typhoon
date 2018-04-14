@@ -75,6 +75,7 @@ resource "null_resource" "copy-worker-secrets" {
     type    = "ssh"
     host    = "${element(concat(digitalocean_droplet.workers.*.ipv4_address), count.index)}"
     user    = "core"
+    port    = "${var.ssh_port}"
     timeout = "15m"
   }
 
