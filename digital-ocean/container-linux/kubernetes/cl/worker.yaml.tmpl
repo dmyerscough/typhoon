@@ -86,6 +86,13 @@ systemd:
         ExecStop=/etc/kubernetes/delete-node
         [Install]
         WantedBy=multi-user.target
+    - name: sshd.socket
+      dropins:
+      - name: 10-sshd-port.conf
+        contents: |
+          [Socket]
+          ListenStream=
+          ListenStream=${ssh_port}
 storage:
   files:
     - path: /etc/kubernetes/kubelet.env
@@ -116,3 +123,34 @@ storage:
             --net=host \
             --dns=host \
             --exec=/kubectl -- --kubeconfig=/etc/kubernetes/kubeconfig delete node $(hostname)
+    - path: /etc/ssh/sshd_config
+      filesystem: root
+      mode: 0600
+      contents:
+        inline: |
+          # CIS Benchmark
+          Subsystem sftp internal-sftp
+          UseDNS no
+
+          X11Forwarding no
+
+          PermitRootLogin no
+          PermitEmptyPasswords no
+
+          PermitUserEnvironment no
+
+          AllowUsers core
+          AuthenticationMethods publickey
+          PubkeyAuthentication yes
+
+          LoginGraceTime 30
+
+          ClientAliveInterval 300
+          ClientAliveCountMax 0
+
+          MaxAuthTries 4
+
+          IgnoreRhosts yes
+          HostbasedAuthentication no
+
+          MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
